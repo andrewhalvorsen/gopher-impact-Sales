@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Smokin’ Burrow – Gopher Impact (1-Year, Natural Only)</title>
+<style>
+  :root{ --yellow:#f4cf2f; --ink:#0f172a; --border:#e5e7eb; --bg:#f8fafc; --card:#ffffff; --radius:20px; --shadow:0 18px 40px rgba(0,0,0,.08); }
+  *{box-sizing:border-box}
+  body{ margin:0; background:var(--bg); color:var(--ink); font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; }
+  .wrap{ max-width:1100px; margin:48px auto; padding:0 20px; display:grid; grid-template-columns:420px 1fr; gap:28px; }
+  .panel{ border-radius:var(--radius); box-shadow:var(--shadow); }
+  .left{ background:var(--yellow); padding:32px 26px; display:flex; flex-direction:column; gap:26px; }
+  .right{ background:var(--card); padding:28px 26px; }
+
+  .lead h1{ margin:0; font-size:26px; line-height:1.15; letter-spacing:-0.01em; }
+  .group{ display:flex; flex-direction:column; gap:12px; }
+  .label{ font-weight:800; font-size:13px; letter-spacing:.04em; text-transform:uppercase; }
+
+  .segmented{ display:grid; grid-template-columns: repeat(3, 1fr); width:100%; padding:6px; gap:0; border-radius:14px; background:rgba(255,255,255,.50); border:2px solid rgba(0,0,0,.06); }
+  .segmented button{ appearance:none; border:0; cursor:pointer; width:100%; padding:14px 0; font-weight:800; font-size:15px; color:#0f172a; background:transparent; border-radius:10px; border:2px solid transparent; transition:background .12s, transform .06s, box-shadow .12s, opacity .12s; }
+  .segmented button:hover{ background:rgba(255,255,255,.35); }
+  .segmented button:active{ transform:translateY(1px); }
+  .segmented button.active{ background:#fff; border-color:rgba(0,0,0,.06); box-shadow:0 8px 20px rgba(0,0,0,.10); }
+  .segmented button.inactive{ opacity:.55; }
+
+  /* Acres input */
+  .inputline{ display:flex; align-items:center; gap:10px; }
+  .inputline input{ width:140px; padding:10px 12px; border-radius:10px; border:2px solid rgba(0,0,0,.10); font-size:16px; font-weight:700; background:#fff; }
+  .inputline .unit{ font-weight:800; font-size:14px; letter-spacing:.02em; }
+
+  .switch{ display:flex; align-items:center; gap:12px; font-weight:700; }
+  .switch input{ display:none; }
+  .toggle{ width:54px; height:30px; border-radius:999px; background:rgba(0,0,0,.25); position:relative; cursor:pointer; }
+  .toggle:after{ content:""; position:absolute; top:3px; left:3px; width:24px; height:24px; border-radius:50%; background:#fff; box-shadow:0 6px 18px rgba(0,0,0,.18); transition:transform .18s ease; }
+  .switch input:checked + .toggle{ background:#16a34a; }
+  .switch input:checked + .toggle:after{ transform:translateX(24px); }
+
+  .disclaimer{ margin-top:8px; font-size:12px; line-height:1.4; color:#111827; opacity:.9; }
+
+  .headerline{ display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:14px; }
+  .title{ font-size:16px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:#374151; display:flex; align-items:center; gap:8px; }
+  .pricepill{ padding:2px 10px; border-radius:999px; background:#eef2ff; color:#1f2937; font-size:12px; font-weight:800; }
+
+  .grid{ display:grid; grid-template-columns:1fr; gap:18px; } /* single column (Natural only) */
+  .card{ border:1px solid var(--border); border-radius:16px; padding:16px; background:#fff; }
+  .card h3{ margin:0 0 8px; font-size:13px; letter-spacing:.06em; color:#6b7280; text-transform:uppercase; }
+  .metric{ display:flex; align-items:baseline; gap:10px; margin:10px 0 6px; }
+  .num{ font-size:34px; font-weight:900; letter-spacing:-0.02em; }
+  .badge{ padding:4px 10px; border-radius:999px; background:#f3f4f6; font-size:12px; font-weight:800; color:#374151; }
+
+  .tbl{ width:100%; border-collapse:collapse; font-size:14px; }
+  .tbl td{ padding:8px 0; border-bottom:1px dashed var(--border); }
+  .tbl td:last-child{ text-align:right; font-variant-numeric:tabular-nums; }
+  .tbl tr:last-child td{ border-bottom:none; font-weight:800; }
+
+  /* Pins/acre key styling */
+  .key{ margin-top:8px; padding:10px 12px; border-radius:12px; background:rgba(255,255,255,.45); border:1px solid rgba(0,0,0,.06); font-size:12px; line-height:1.35; color:#111827; }
+  .key div{ margin:2px 0; }
+
+  @media (max-width:1024px){ .wrap{ grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <!-- LEFT / CONTROLS -->
+    <section class="panel left" aria-label="Controls">
+      <div class="lead"><h1>See how much gophers cost you</h1></div>
+
+      <!-- Infestation -->
+      <div class="group">
+        <div class="label">Infestation Level</div>
+        <div class="segmented" role="tablist" aria-label="Infestation Level">
+          <button type="button" class="infbtn" data-level="1" role="tab" aria-selected="false">Low</button>
+          <button type="button" class="infbtn active" data-level="2" role="tab" aria-selected="true">Medium</button>
+          <button type="button" class="infbtn" data-level="3" role="tab" aria-selected="false">High</button>
+        </div>
+        <!-- Pins/acre key -->
+        <div class="key" aria-label="Pins per acre guide">
+          <div>Low: 1–2 pins/acre</div>
+          <div>Medium: 3–4 pins/acre</div>
+          <div>High: 5+ pins/acre</div>
+        </div>
+      </div>
+
+      <!-- Acres (typeable) -->
+      <div class="group">
+        <div class="label">Acres</div>
+        <div class="inputline">
+          <input id="acres" type="number" inputmode="numeric" min="1" step="1" value="40" aria-label="Acres" />
+          <span class="unit">acres</span>
+        </div>
+      </div>
+
+      <!-- Owl Boxes -->
+      <div class="group">
+        <label class="switch">
+          <input id="owls" type="checkbox" aria-label="Owl Boxes" />
+          <span class="toggle" aria-hidden="true"></span>
+          <span>Owl Boxes</span>
+        </label>
+        <!-- Disclaimer -->
+        <p class="disclaimer">
+          *Disclaimer: Estimates are based on research and field data. Results may vary and are not guaranteed.
+        </p>
+      </div>
+    </section>
+
+    <!-- RIGHT / RESULTS -->
+    <section class="panel right" aria-live="polite" aria-atomic="true">
+      <div class="headerline">
+        <div class="title">
+          1-Year Impact (Almonds)
+          <span id="almondPrice" class="pricepill"></span>
+        </div>
+      </div>
+
+      <div class="grid">
+        <!-- NATURAL ONLY -->
+        <div class="card">
+          <h3>Natural</h3>
+          <div class="metric"><div class="num" id="nat_total">$—</div><span class="badge">Total Damage</span></div>
+          <table class="tbl"><tbody id="nat_break"></tbody></table>
+        </div>
+      </div>
+    </section>
+  </div>
+
+<script>
+/* ------------------------------ Helpers ------------------------------ */
+const $=s=>document.querySelector(s), $$=s=>Array.from(document.querySelectorAll(s));
+const clamp=(x,lo,hi)=>Math.max(lo,Math.min(hi,x));
+function money(n){ return "$"+Math.round(n).toLocaleString("en-US"); }
+function priceFmt(n){ return "$"+Number(n).toFixed(2)+"/lb"; }
+
+/* ------------------------------ Model (1-Year, deterministic) ------------------------------ */
+const K_per_acre = 80.0;
+const litterMean = 6.0;
+const birthFracFemale = 0.70;
+const breederFrac = 0.80;
+const fertSlope = 3.5;
+const survJ = 0.45, survS = 0.65, survA = 0.82;
+const agingA = 0.08;
+
+/* Amplified Owls (kept) */
+const OWLS_PER_100_ACRES = 1.9;
+const PREDATION_PER_OWL_PER_WEEK = 4.0;
+const BETA_YIELD = 0.55;
+const BETA_NON   = 1.00;
+const OWL_MIN_FACTOR = 0.60;
+
+/* Economics */
+const pricePerLb = 2.50;
+const yieldLbPerAcre = 2500.0;
+const lossMild = 0.02, lossMedium = 0.04, lossSevere = 0.06;
+
+/* Rebalanced baselines (per acre) */
+const dripPerAcre_base = 80.0;
+const cropDmgPerAcre_base = 60.0;
+const miscPerAcre_base   = 30.0;
+
+const sevMultMild = 0.8, sevMultMed = 1.0, sevMultSev = 1.2;
+
+/* Initial adults per 10 acres */
+const basePer10 = {1:20, 2:40, 3:70};
+
+function annualStepNatural(P, acres, owlsOn){
+  let [Jf,Jm,Sf,Sm,Af,Am] = [P[0][0],P[0][1],P[1][0],P[1][1],P[2][0],P[2][1]];
+  const K_total = K_per_acre * acres;
+  const total   = Jf+Jm+Sf+Sm+Af+Am;
+  const density = K_total>0 ? total / K_total : 0.0;
+
+  const fertMult = 1.0 / (1.0 + Math.exp(fertSlope * (density - 1.0)));
+  const breeders = Af * breederFrac;
+  const births   = breeders * litterMean * fertMult;
+  const pupsF    = births * birthFracFemale;
+  const pupsM    = births * (1.0 - birthFracFemale);
+
+  let nextJf = pupsF;
+  let nextJm = pupsM;
+  let nextSf = Jf * survJ;
+  let nextSm = Jm * survJ;
+  let nextAf = Sf * survS + Af * survA;
+  let nextAm = Sm * survS + Am * survA;
+
+  /* Adult aging */
+  nextAf = Math.max(0, nextAf - Af * agingA);
+  nextAm = Math.max(0, nextAm - Am * agingA);
+
+  /* Owl predation proportional to density (if ON) */
+  if (owlsOn){
+    const owlsEff = OWLS_PER_100_ACRES * (acres/100.0);
+    const afterTot = nextJf + nextJm + nextSf + nextSm + nextAf + nextAm;
+    const densityAfter = K_total>0 ? Math.min(1.0, afterTot / K_total) : 0.0;
+    const owlRemoval = owlsEff * PREDATION_PER_OWL_PER_WEEK * 52.0 * Math.max(0.0, Math.min(1.0, densityAfter));
+    if(afterTot > 0.0 && owlRemoval > 0.0){
+      const frac = Math.min(1.0, owlRemoval / afterTot);
+      const k = 1.0 - frac;
+      nextJf*=k; nextJm*=k; nextSf*=k; nextSm*=k; nextAf*=k; nextAm*=k;
+    }
+  }
+
+  return [[nextJf,nextJm],[nextSf,nextSm],[nextAf,nextAm]];
+}
+
+const sumAll=P=>P[0][0]+P[0][1]+P[1][0]+P[1][1]+P[2][0]+P[2][1];
+
+/* Damage model (Natural only), with owl discount */
+function damagesNatural(acres, level, owlYieldFactor=1.0, owlNonFactor=1.0){
+  const baseRevenue = acres * yieldLbPerAcre * pricePerLb;
+  const lossRate = (level===1?lossMild:(level===2?lossMedium:lossSevere));
+  let lossOfCrop = baseRevenue * lossRate * clamp(owlYieldFactor, OWL_MIN_FACTOR, 1.0);
+
+  const sevMult = (level===1?sevMultMild:(level===2?sevMultMed:sevMultSev));
+
+  let drip  = dripPerAcre_base    * sevMult * acres;
+  let cropD = cropDmgPerAcre_base * sevMult * acres;
+  let misc  = miscPerAcre_base    * sevMult * acres;
+
+  const f = clamp(owlNonFactor, OWL_MIN_FACTOR, 1.0);
+  drip*=f; cropD*=f; misc*=f;
+
+  drip=Math.max(0,drip); cropD=Math.max(0,cropD); misc=Math.max(0,misc); lossOfCrop=Math.max(0,lossOfCrop);
+  const total = lossOfCrop + drip + cropD + misc;
+  return { lossOfCrop, drip, cropD, misc, total };
+}
+
+function computeNaturalOneYear(acres, level, owlsOn){
+  const totalInit = basePer10[level] * (acres / 10.0);
+  const Af0 = totalInit * birthFracFemale, Am0 = totalInit * (1.0 - birthFracFemale);
+  const P0 = [[0,0],[0,0],[Af0,Am0]];
+
+  const P_off = annualStepNatural(P0, acres, false);
+  const P_on  = annualStepNatural(P0, acres, true);
+  const natPA_off = sumAll(P_off)/acres, natPA_on = sumAll(P_on)/acres;
+
+  if(!owlsOn){
+    return damagesNatural(acres, level, 1.0, 1.0);
+  }
+
+  const eps=1e-9;
+  const rN = Math.max(0,(natPA_off - natPA_on) / Math.max(eps, natPA_off));
+  const owlYield = 1 - BETA_YIELD * rN;
+  const owlNon   = 1 - BETA_NON  * rN;
+  return damagesNatural(acres, level, owlYield, owlNon);
+}
+
+/* ------------------------------ Render ------------------------------ */
+function activeLevel(){ const btn=$$(".infbtn").find(b=>b.classList.contains("active")); return parseInt(btn.dataset.level,10); }
+
+function getAcres(){
+  const input = $("#acres");
+  let v = parseInt(input.value, 10);
+  if (!Number.isFinite(v) || v < 1) v = 1;     // enforce positive integer
+  if (String(v) !== input.value) input.value = v; // normalize field
+  return v;
+}
+
+function render(){
+  const acres = getAcres();
+  const level = activeLevel();
+  const owlsOn = $("#owls").checked;
+
+  const dN = computeNaturalOneYear(acres, level, owlsOn);
+
+  $("#nat_total").textContent = money(dN.total);
+  $("#nat_break").innerHTML = `
+    <tr><td>Loss of crop</td><td>${money(dN.lossOfCrop)}</td></tr>
+    <tr><td>Drip/irrigation</td><td>${money(dN.drip)}</td></tr>
+    <tr><td>Crop damage</td><td>${money(dN.cropD)}</td></tr>
+    <tr><td>Misc</td><td>${money(dN.misc)}</td></tr>
+    <tr><td>Total</td><td>${money(dN.total)}</td></tr>
+  `;
+}
+
+/* Events */
+$$(".infbtn").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    $$(".infbtn").forEach(b=>{ const on=(b===btn); b.classList.toggle("active",on); b.setAttribute("aria-selected", on?"true":"false"); });
+    render();
+  });
+});
+$("#acres").addEventListener("input", render);
+$("#acres").addEventListener("blur", ()=>{ getAcres(); render(); }); // clean up any partial input
+$("#owls").addEventListener("change", render);
+
+window.addEventListener("load", ()=>{
+  render();
+  const priceEl = $("#almondPrice");
+  if (priceEl) priceEl.textContent = priceFmt(pricePerLb);
+});
+</script>
+</body>
+</html>
