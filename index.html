@@ -55,8 +55,7 @@
   .tbl tr:last-child td{ border-bottom:none; font-weight:800; }
 
   /* Pins/acre key styling */
-  .key{ margin-top:8px; padding:10px 12px; border-radius:12px; background:rgba(255,255,255,.45); border:1px solid rgba(0,0,0,.06); font-size:12px; line-height:1.35; color:#111827; }
-  .key div{ margin:2px 0; }
+  .key{ margin-top:4px; padding:10px 12px; border-radius:12px; background:rgba(255,255,255,.45); border:1px solid rgba(0,0,0,.06); font-size:12px; line-height:1.35; color:#111827; }
 
   @media (max-width:1024px){ .wrap{ grid-template-columns:1fr; } }
 </style>
@@ -74,12 +73,6 @@
           <button type="button" class="infbtn" data-level="1" role="tab" aria-selected="false">Low</button>
           <button type="button" class="infbtn active" data-level="2" role="tab" aria-selected="true">Medium</button>
           <button type="button" class="infbtn" data-level="3" role="tab" aria-selected="false">High</button>
-        </div>
-        <!-- Pins/acre key -->
-        <div class="key" aria-label="Pins per acre guide">
-          <div>Low: 1–2 pins/acre</div>
-          <div>Medium: 3–4 pins/acre</div>
-          <div>High: 5+ pins/acre</div>
         </div>
       </div>
 
@@ -103,6 +96,15 @@
         <p class="disclaimer">
           *Disclaimer: Estimates are based on research and field data. Results may vary and are not guaranteed.
         </p>
+      </div>
+
+      <!-- Pins/acre key (moved below Acres + Owl Boxes) -->
+      <div class="group">
+        <div class="key" aria-label="Pins per acre guide">
+          <div>Low: 1–2 pins/acre</div>
+          <div>Medium: 3–4 pins/acre</div>
+          <div>High: 5+ pins/acre</div>
+        </div>
       </div>
     </section>
 
@@ -281,7 +283,7 @@ $$(".infbtn").forEach(btn=>{
   });
 });
 $("#acres").addEventListener("input", render);
-$("#acres").addEventListener("blur", ()=>{ getAcres(); render(); }); // clean up any partial input
+$("#acres").addEventListener("blur", ()=>{ getAcres(); render(); });
 $("#owls").addEventListener("change", render);
 
 window.addEventListener("load", ()=>{
