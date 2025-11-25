@@ -191,8 +191,8 @@ const speciesParams = {
 };
 
 /* Linear drop-off config (1st, 2nd, 3rd species weights) */
-const DROP_STEP = 0.4;   // linear decrement per additional species
-const MIN_WEIGHT = 0.4;  // floor so the 3rd species still contributes meaningfully
+const DROP_STEP = 0.5;   // linear decrement per additional species
+const MIN_WEIGHT = 0.3;  // floor so the 3rd species still contributes meaningfully
 
 /* One-species annual step (for owl population effect only) */
 function stepSpeciesOnce(P, acres, owlsOn, K_per_acre){
