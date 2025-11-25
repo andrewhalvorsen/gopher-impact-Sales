@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Smokin’ Burrow – Gopher Impact (1-Year, Natural Only)</title>
+<title>Smokin’ Burrow – Rodent Impact (1-Year, Natural Only)</title>
 <style>
   :root{ --yellow:#f4cf2f; --ink:#0f172a; --border:#e5e7eb; --bg:#f8fafc; --card:#ffffff; --radius:20px; --shadow:0 18px 40px rgba(0,0,0,.08); }
   *{box-sizing:border-box}
@@ -77,6 +77,16 @@
         </div>
       </div>
 
+      <!-- Rodents (multi-select) -->
+      <div class="group">
+        <div class="label">Rodents</div>
+        <div class="segmented" role="group" aria-label="Rodent species">
+          <button type="button" class="rodentbtn active" data-kind="gopher">Gophers</button>
+          <button type="button" class="rodentbtn" data-kind="squirrel">Squirrels</button>
+          <button type="button" class="rodentbtn" data-kind="rat">Rats</button>
+        </div>
+      </div>
+
       <!-- Acres (typeable) -->
       <div class="group">
         <div class="label">Acres</div>
@@ -93,7 +103,6 @@
           <span class="toggle" aria-hidden="true"></span>
           <span>Owl Boxes</span>
         </label>
-        <!-- Disclaimer -->
         <p class="disclaimer">
           *Disclaimer: Estimates are based on research and field data. Results may vary and are not guaranteed.
         </p>
@@ -135,7 +144,7 @@ const clamp=(x,lo,hi)=>Math.max(lo,Math.min(hi,x));
 function money(n){ return "$"+Math.round(n).toLocaleString("en-US"); }
 
 /* ------------------------------ Model (1-Year, deterministic) ------------------------------ */
-const K_per_acre = 80.0;
+/* Shared life-history (kept from gopher model for a simple combined run) */
 const litterMean = 6.0;
 const birthFracFemale = 0.70;
 const breederFrac = 0.80;
@@ -143,29 +152,34 @@ const fertSlope = 3.5;
 const survJ = 0.45, survS = 0.65, survA = 0.82;
 const agingA = 0.08;
 
-/* Amplified Owls (kept) */
+/* Owls */
 const OWLS_PER_100_ACRES = 1.9;
 const PREDATION_PER_OWL_PER_WEEK = 4.0;
 const BETA_YIELD = 0.55;
 const BETA_NON   = 1.00;
 const OWL_MIN_FACTOR = 0.60;
 
-/* Economics (price is now editable) */
-let pricePerLb = 2.50;                 // default, editable in UI
+/* Economics (price is editable) */
+let pricePerLb = 2.50;
 const yieldLbPerAcre = 2500.0;
 const lossMild = 0.02, lossMedium = 0.04, lossSevere = 0.06;
 
-/* Rebalanced baselines (per acre) */
+/* Rebalanced per-acre baselines */
 const dripPerAcre_base = 80.0;
 const cropDmgPerAcre_base = 60.0;
 const miscPerAcre_base   = 30.0;
 
 const sevMultMild = 0.8, sevMultMed = 1.0, sevMultSev = 1.2;
 
-/* Initial adults per 10 acres */
-const basePer10 = {1:20, 2:40, 3:70};
+/* Species parameters (initial pressure & carrying capacity) */
+const speciesParams = {
+  gopher:   { K_per_acre: 80, basePer10: {1:20, 2:40, 3:70} },
+  squirrel: { K_per_acre: 60, basePer10: {1:12, 2:24, 3:40} },
+  rat:      { K_per_acre: 70, basePer10: {1:15, 2:30, 3:50} }
+};
 
-function annualStepNatural(P, acres, owlsOn){
+/* Multi-species annual step (deterministic) */
+function stepSpeciesOnce(P, acres, owlsOn, K_per_acre){
   let [Jf,Jm,Sf,Sm,Af,Am] = [P[0][0],P[0][1],P[1][0],P[1][1],P[2][0],P[2][1]];
   const K_total = K_per_acre * acres;
   const total   = Jf+Jm+Sf+Sm+Af+Am;
@@ -184,11 +198,9 @@ function annualStepNatural(P, acres, owlsOn){
   let nextAf = Sf * survS + Af * survA;
   let nextAm = Sm * survS + Am * survA;
 
-  /* Adult aging */
   nextAf = Math.max(0, nextAf - Af * agingA);
   nextAm = Math.max(0, nextAm - Am * agingA);
 
-  /* Owl predation proportional to density (if ON) */
   if (owlsOn){
     const owlsEff = OWLS_PER_100_ACRES * (acres/100.0);
     const afterTot = nextJf + nextJm + nextSf + nextSm + nextAf + nextAm;
@@ -206,14 +218,28 @@ function annualStepNatural(P, acres, owlsOn){
 
 const sumAll=P=>P[0][0]+P[0][1]+P[1][0]+P[1][1]+P[2][0]+P[2][1];
 
-/* Damage model (Natural only), with owl discount */
+/* Combined population drop across selected species (for owl discount rN) */
+function combinedPopAfterOneYear(acres, level, active, owlsOn){
+  let total = 0;
+  for (const key of active){
+    const sp = speciesParams[key];
+    const base10 = sp.basePer10[level];
+    const totalInit = base10 * (acres/10);
+    const Af0 = totalInit * birthFracFemale, Am0 = totalInit * (1 - birthFracFemale);
+    const P0 = [[0,0],[0,0],[Af0,Am0]];
+    const P1 = stepSpeciesOnce(P0, acres, owlsOn, sp.K_per_acre);
+    total += sumAll(P1);
+  }
+  return total;
+}
+
+/* Damages (Natural only), optionally discounted by owl impact rN */
 function damagesNatural(acres, level, owlYieldFactor=1.0, owlNonFactor=1.0){
   const baseRevenue = acres * yieldLbPerAcre * pricePerLb;
   const lossRate = (level===1?lossMild:(level===2?lossMedium:lossSevere));
   let lossOfCrop = baseRevenue * lossRate * clamp(owlYieldFactor, OWL_MIN_FACTOR, 1.0);
 
   const sevMult = (level===1?sevMultMild:(level===2?sevMultMed:sevMultSev));
-
   let drip  = dripPerAcre_base    * sevMult * acres;
   let cropD = cropDmgPerAcre_base * sevMult * acres;
   let misc  = miscPerAcre_base    * sevMult * acres;
@@ -226,21 +252,22 @@ function damagesNatural(acres, level, owlYieldFactor=1.0, owlNonFactor=1.0){
   return { lossOfCrop, drip, cropD, misc, total };
 }
 
-function computeNaturalOneYear(acres, level, owlsOn){
-  const totalInit = basePer10[level] * (acres / 10.0);
-  const Af0 = totalInit * birthFracFemale, Am0 = totalInit * (1.0 - birthFracFemale);
-  const P0 = [[0,0],[0,0],[Af0,Am0]];
-
-  const P_off = annualStepNatural(P0, acres, false);
-  const P_on  = annualStepNatural(P0, acres, true);
-  const natPA_off = sumAll(P_off)/acres, natPA_on = sumAll(P_on)/acres;
+function computeOneYear(acres, level, owlsOn, activeSet){
+  const active = Array.from(activeSet);
+  if (active.length === 0){
+    // No species selected → base damages, no owl discount effect
+    return damagesNatural(acres, level, 1.0, 1.0);
+  }
 
   if(!owlsOn){
     return damagesNatural(acres, level, 1.0, 1.0);
   }
 
   const eps=1e-9;
-  const rN = Math.max(0,(natPA_off - natPA_on) / Math.max(eps, natPA_off));
+  const totOff = combinedPopAfterOneYear(acres, level, active, false);
+  const totOn  = combinedPopAfterOneYear(acres, level, active, true);
+  const rN = Math.max(0, (totOff - totOn) / Math.max(eps, totOff));
+
   const owlYield = 1 - BETA_YIELD * rN;
   const owlNon   = 1 - BETA_NON  * rN;
   return damagesNatural(acres, level, owlYield, owlNon);
@@ -248,27 +275,25 @@ function computeNaturalOneYear(acres, level, owlsOn){
 
 /* ------------------------------ Render & inputs ------------------------------ */
 let lastValidAcres = 40;
+const activeRodents = new Set(["gopher"]); // default ON
 
 function activeLevel(){
   const btn=$$(".infbtn").find(b=>b.classList.contains("active"));
   return parseInt(btn.dataset.level,10);
 }
 
-/* Acres input handling */
+/* Acres input handling (lax while typing, strict on blur) */
 function readAcresLax(){
   const input = $("#acres");
   const v = parseInt(input.value, 10);
-  if (!Number.isFinite(v) || v < 1) return null; // user mid-typing
-  lastValidAcres = v;
-  return v;
+  if (!Number.isFinite(v) || v < 1) return null;
+  lastValidAcres = v; return v;
 }
 function readAcresStrict(){
   const input = $("#acres");
   let v = parseInt(input.value, 10);
   if (!Number.isFinite(v) || v < 1) v = lastValidAcres || 1;
-  input.value = v;
-  lastValidAcres = v;
-  return v;
+  input.value = v; lastValidAcres = v; return v;
 }
 
 /* Price pill editor */
@@ -281,34 +306,41 @@ function installPriceEditor(){
     const range = document.createRange(); range.selectNodeContents(ed);
     const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
   });
-
-  ed.addEventListener("keydown", (e)=>{
-    if (e.key === "Enter"){ e.preventDefault(); ed.blur(); }
-  });
-
+  ed.addEventListener("keydown", (e)=>{ if (e.key === "Enter"){ e.preventDefault(); ed.blur(); }});
   ed.addEventListener("blur", ()=>{
     const raw = ed.textContent || "";
     const num = parseFloat(raw.replace(/[^0-9.]/g,""));
-    if (Number.isFinite(num) && num > 0){
-      pricePerLb = num;
-    }
+    if (Number.isFinite(num) && num > 0){ pricePerLb = num; }
     ed.textContent = pricePerLb.toFixed(2);
     render(lastValidAcres);
   });
 }
 
+/* Rodent toggle handling (multi-select pills) */
+function installRodentToggles(){
+  $$(".rodentbtn").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      const k = btn.dataset.kind;
+      const isActive = btn.classList.toggle("active");
+      if (isActive) activeRodents.add(k); else activeRodents.delete(k);
+      render(lastValidAcres);
+    });
+  });
+}
+
+/* Render */
 function render(acres){
   const level = activeLevel();
   const owlsOn = $("#owls").checked;
-  const dN = computeNaturalOneYear(acres, level, owlsOn);
+  const d = computeOneYear(acres, level, owlsOn, activeRodents);
 
-  $("#nat_total").textContent = money(dN.total);
+  $("#nat_total").textContent = money(d.total);
   $("#nat_break").innerHTML = `
-    <tr><td>Loss of crop</td><td>${money(dN.lossOfCrop)}</td></tr>
-    <tr><td>Drip/irrigation</td><td>${money(dN.drip)}</td></tr>
-    <tr><td>Crop damage</td><td>${money(dN.cropD)}</td></tr>
-    <tr><td>Misc</td><td>${money(dN.misc)}</td></tr>
-    <tr><td>Total</td><td>${money(dN.total)}</td></tr>
+    <tr><td>Loss of crop</td><td>${money(d.lossOfCrop)}</td></tr>
+    <tr><td>Drip/irrigation</td><td>${money(d.drip)}</td></tr>
+    <tr><td>Crop damage</td><td>${money(d.cropD)}</td></tr>
+    <tr><td>Misc</td><td>${money(d.misc)}</td></tr>
+    <tr><td>Total</td><td>${money(d.total)}</td></tr>
   `;
 }
 
@@ -334,6 +366,7 @@ $("#owls").addEventListener("change", ()=>render(lastValidAcres));
 window.addEventListener("load", ()=>{
   lastValidAcres = parseInt($("#acres").value,10) || 40;
   installPriceEditor();
+  installRodentToggles();
   render(lastValidAcres);
 });
 </script>
