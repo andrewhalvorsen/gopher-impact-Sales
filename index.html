@@ -190,7 +190,11 @@ const speciesParams = {
   }
 };
 
-/* One-species annual step */
+/* Linear drop-off config (1st, 2nd, 3rd species weights) */
+const DROP_STEP = 0.3;   // linear decrement per additional species
+const MIN_WEIGHT = 0.4;  // floor so the 3rd species still contributes meaningfully
+
+/* One-species annual step (for owl population effect only) */
 function stepSpeciesOnce(P, acres, owlsOn, K_per_acre){
   let [Jf,Jm,Sf,Sm,Af,Am] = [P[0][0],P[0][1],P[1][0],P[1][1],P[2][0],P[2][1]];
   const K_total = K_per_acre * acres;
@@ -230,7 +234,7 @@ function stepSpeciesOnce(P, acres, owlsOn, K_per_acre){
 
 const sumAll=P=>P[0][0]+P[0][1]+P[1][0]+P[1][1]+P[2][0]+P[2][1];
 
-/* Combined population after one year (for owl discount rN) */
+/* Population after one year (for owl discount rN) */
 function combinedPopAfterOneYear(acres, level, active, owlsOn){
   let total = 0;
   for (const key of active){
@@ -244,53 +248,74 @@ function combinedPopAfterOneYear(acres, level, active, owlsOn){
   return total;
 }
 
-/* NEW: Per-species damages are SUMMED (not averaged) so more species => more damage */
-function damagesNaturalMulti(acres, level, activeSet, owlYieldFactor=1.0, owlNonFactor=1.0){
+/* Standalone damage for a single species (no owls) */
+function speciesStandaloneDamage(acres, level, key){
+  const sevMult = (level===1?sevMultMild:(level===2?sevMultMed:sevMultSev));
   const baseRevenue = acres * yieldLbPerAcre * pricePerLb;
   const lossRate = (level===1?lossMild:(level===2?lossMedium:lossSevere));
-  const sevMult = (level===1?sevMultMild:(level===2?sevMultMed:sevMultSev));
+  const m = speciesParams[key].mult;
 
-  let lossOfCrop = 0, drip = 0, cropD = 0, misc = 0;
-
-  for (const key of activeSet){
-    const m = speciesParams[key].mult;
-    // Each species contributes its own share (multipliers scale category impact)
-    lossOfCrop += baseRevenue * lossRate * m.yield;
-    drip       += dripPerAcre_base    * sevMult * acres * m.drip;
-    cropD      += cropDmgPerAcre_base * sevMult * acres * m.crop;
-    misc       += miscPerAcre_base    * sevMult * acres * m.misc;
-  }
-
-  // Apply owl discounts (clamped)
-  const fY = clamp(owlYieldFactor, OWL_MIN_FACTOR, 1.0);
-  const fN = clamp(owlNonFactor,   OWL_MIN_FACTOR, 1.0);
-  lossOfCrop *= fY;
-  drip  *= fN; cropD *= fN; misc *= fN;
-
-  lossOfCrop=Math.max(0,lossOfCrop);
-  drip=Math.max(0,drip); cropD=Math.max(0,cropD); misc=Math.max(0,misc);
+  const lossOfCrop = baseRevenue * lossRate * m.yield;
+  const drip  = dripPerAcre_base    * sevMult * acres * m.drip;
+  const cropD = cropDmgPerAcre_base * sevMult * acres * m.crop;
+  const misc  = miscPerAcre_base    * sevMult * acres * m.misc;
   const total = lossOfCrop + drip + cropD + misc;
-  return { lossOfCrop, drip, cropD, misc, total };
+  return {lossOfCrop, drip, cropD, misc, total};
 }
 
+/* Linear drop-off weighted sum across species */
+function weightedSumDamages(acres, level, activeSet){
+  const list = Array.from(activeSet).map(k => ({ key:k, dmg: speciesStandaloneDamage(acres, level, k) }));
+  if (list.length === 0) return {lossOfCrop:0, drip:0, cropD:0, misc:0, total:0};
+
+  // Sort by standalone total descending so biggest driver gets weight 1.0
+  list.sort((a,b)=> b.dmg.total - a.dmg.total);
+
+  // Build weights linearly: 1.0, 1.0-DROP_STEP, 1.0-2*DROP_STEP, ... with a floor
+  const weights = list.map((_,i)=> Math.max(MIN_WEIGHT, 1 - i*DROP_STEP));
+
+  // Weighted sum
+  let lossOfCrop=0, drip=0, cropD=0, misc=0;
+  list.forEach((item,i)=>{
+    const w = weights[i], d = item.dmg;
+    lossOfCrop += w * d.lossOfCrop;
+    drip       += w * d.drip;
+    cropD      += w * d.cropD;
+    misc       += w * d.misc;
+  });
+  const total = lossOfCrop + drip + cropD + misc;
+  return {lossOfCrop, drip, cropD, misc, total};
+}
+
+/* Final 1-year damages (with owl discounts applied to the weighted sum) */
 function computeOneYear(acres, level, owlsOn, activeSet){
   if (activeSet.size === 0){
-    // Nothing selected → show zeros
     return { lossOfCrop:0, drip:0, cropD:0, misc:0, total:0 };
   }
 
-  if (!owlsOn){
-    return damagesNaturalMulti(acres, level, activeSet, 1.0, 1.0);
+  // Base weighted damages with linear drop-off
+  let D = weightedSumDamages(acres, level, activeSet);
+
+  // Owl discounts
+  if (owlsOn){
+    const eps=1e-9;
+    const totOff = combinedPopAfterOneYear(acres, level, Array.from(activeSet), false);
+    const totOn  = combinedPopAfterOneYear(acres, level, Array.from(activeSet), true);
+    const rN = Math.max(0, (totOff - totOn) / Math.max(eps, totOff));
+
+    const fY = clamp(1 - BETA_YIELD * rN, OWL_MIN_FACTOR, 1.0);
+    const fN = clamp(1 - BETA_NON  * rN, OWL_MIN_FACTOR, 1.0);
+
+    D.lossOfCrop *= fY;
+    D.drip *= fN; D.cropD *= fN; D.misc *= fN;
+    D.total = D.lossOfCrop + D.drip + D.cropD + D.misc;
   }
 
-  const eps=1e-9;
-  const totOff = combinedPopAfterOneYear(acres, level, Array.from(activeSet), false);
-  const totOn  = combinedPopAfterOneYear(acres, level, Array.from(activeSet), true);
-  const rN = Math.max(0, (totOff - totOn) / Math.max(eps, totOff));
-
-  const owlYield = 1 - BETA_YIELD * rN;
-  const owlNon   = 1 - BETA_NON  * rN;
-  return damagesNaturalMulti(acres, level, activeSet, owlYield, owlNon);
+  // Clamp non-negatives
+  D.lossOfCrop=Math.max(0,D.lossOfCrop);
+  D.drip=Math.max(0,D.drip); D.cropD=Math.max(0,D.cropD); D.misc=Math.max(0,D.misc);
+  D.total = D.lossOfCrop + D.drip + D.cropD + D.misc;
+  return D;
 }
 
 /* ------------------------------ Render & inputs ------------------------------ */
