@@ -40,7 +40,8 @@
 
   .headerline{ display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:14px; }
   .title{ font-size:16px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:#374151; display:flex; align-items:center; gap:8px; }
-  .pricepill{ padding:2px 10px; border-radius:999px; background:#eef2ff; color:#1f2937; font-size:12px; font-weight:800; }
+  .pricepill{ padding:2px 10px; border-radius:999px; background:#eef2ff; color:#1f2937; font-size:12px; font-weight:800; cursor:text; }
+  #priceEdit:focus{ outline:none; }
 
   .grid{ display:grid; grid-template-columns:1fr; gap:18px; }
   .card{ border:1px solid var(--border); border-radius:16px; padding:16px; background:#fff; }
@@ -64,7 +65,7 @@
   <div class="wrap">
     <!-- LEFT / CONTROLS -->
     <section class="panel left" aria-label="Controls">
-      <div class="lead"><h1>See how much gophers cost you</h1></div>
+      <div class="lead"><h1>See how much rodents cost you</h1></div>
 
       <!-- Infestation -->
       <div class="group">
@@ -132,7 +133,6 @@
 const $=s=>document.querySelector(s), $$=s=>Array.from(document.querySelectorAll(s));
 const clamp=(x,lo,hi)=>Math.max(lo,Math.min(hi,x));
 function money(n){ return "$"+Math.round(n).toLocaleString("en-US"); }
-function priceFmt(n){ return "$"+Number(n).toFixed(2)+"/lb"; }
 
 /* ------------------------------ Model (1-Year, deterministic) ------------------------------ */
 const K_per_acre = 80.0;
@@ -150,8 +150,8 @@ const BETA_YIELD = 0.55;
 const BETA_NON   = 1.00;
 const OWL_MIN_FACTOR = 0.60;
 
-/* Economics */
-const pricePerLb = 2.50;
+/* Economics (price is now editable) */
+let pricePerLb = 2.50;                 // default, editable in UI
 const yieldLbPerAcre = 2500.0;
 const lossMild = 0.02, lossMedium = 0.04, lossSevere = 0.06;
 
@@ -246,7 +246,7 @@ function computeNaturalOneYear(acres, level, owlsOn){
   return damagesNatural(acres, level, owlYield, owlNon);
 }
 
-/* ------------------------------ Render & input handling ------------------------------ */
+/* ------------------------------ Render & inputs ------------------------------ */
 let lastValidAcres = 40;
 
 function activeLevel(){
@@ -254,16 +254,14 @@ function activeLevel(){
   return parseInt(btn.dataset.level,10);
 }
 
-/* LAX read: during typing, allow empty/invalid and don't overwrite the field */
+/* Acres input handling */
 function readAcresLax(){
   const input = $("#acres");
   const v = parseInt(input.value, 10);
-  if (!Number.isFinite(v) || v < 1) return null; // user mid-typing; skip update
+  if (!Number.isFinite(v) || v < 1) return null; // user mid-typing
   lastValidAcres = v;
   return v;
 }
-
-/* STRICT read: on blur, enforce >=1 and write back */
 function readAcresStrict(){
   const input = $("#acres");
   let v = parseInt(input.value, 10);
@@ -271,6 +269,32 @@ function readAcresStrict(){
   input.value = v;
   lastValidAcres = v;
   return v;
+}
+
+/* Price pill editor */
+function installPriceEditor(){
+  const pill = $("#almondPrice");
+  pill.innerHTML = `$<span id="priceEdit" contenteditable="true" spellcheck="false" aria-label="Almond price per pound">${pricePerLb.toFixed(2)}</span>/lb`;
+  const ed = $("#priceEdit");
+
+  ed.addEventListener("focus", ()=>{
+    const range = document.createRange(); range.selectNodeContents(ed);
+    const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
+  });
+
+  ed.addEventListener("keydown", (e)=>{
+    if (e.key === "Enter"){ e.preventDefault(); ed.blur(); }
+  });
+
+  ed.addEventListener("blur", ()=>{
+    const raw = ed.textContent || "";
+    const num = parseFloat(raw.replace(/[^0-9.]/g,""));
+    if (Number.isFinite(num) && num > 0){
+      pricePerLb = num;
+    }
+    ed.textContent = pricePerLb.toFixed(2);
+    render(lastValidAcres);
+  });
 }
 
 function render(acres){
@@ -296,13 +320,10 @@ $$(".infbtn").forEach(btn=>{
   });
 });
 
-/* On input: don't force a value; only render when value is valid */
 $("#acres").addEventListener("input", ()=>{
   const v = readAcresLax();
   if (v !== null) render(v);
 });
-
-/* On blur: clamp and render */
 $("#acres").addEventListener("blur", ()=>{
   const v = readAcresStrict();
   render(v);
@@ -312,9 +333,8 @@ $("#owls").addEventListener("change", ()=>render(lastValidAcres));
 
 window.addEventListener("load", ()=>{
   lastValidAcres = parseInt($("#acres").value,10) || 40;
+  installPriceEditor();
   render(lastValidAcres);
-  const priceEl = $("#almondPrice");
-  if (priceEl) priceEl.textContent = priceFmt(pricePerLb);
 });
 </script>
 </body>
