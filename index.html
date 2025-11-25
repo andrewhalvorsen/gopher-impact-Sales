@@ -18,11 +18,10 @@
   .label{ font-weight:800; font-size:13px; letter-spacing:.04em; text-transform:uppercase; }
 
   .segmented{ display:grid; grid-template-columns: repeat(3, 1fr); width:100%; padding:6px; gap:0; border-radius:14px; background:rgba(255,255,255,.50); border:2px solid rgba(0,0,0,.06); }
-  .segmented button{ appearance:none; border:0; cursor:pointer; width:100%; padding:14px 0; font-weight:800; font-size:15px; color:#0f172a; background:transparent; border-radius:10px; border:2px solid transparent; transition:background .12s, transform .06s, box-shadow .12s, opacity .12s; }
+  .segmented button{ appearance:none; border:0; cursor:pointer; width:100%; padding:14px 0; font-weight:800; font-size:15px; color:#0f172a; background:transparent; border-radius:10px; border:2px solid transparent; transition:background .12s, transform .12s, box-shadow .12s, opacity .12s; }
   .segmented button:hover{ background:rgba(255,255,255,.35); }
   .segmented button:active{ transform:translateY(1px); }
   .segmented button.active{ background:#fff; border-color:rgba(0,0,0,.06); box-shadow:0 8px 20px rgba(0,0,0,.10); }
-  .segmented button.inactive{ opacity:.55; }
 
   /* Acres input */
   .inputline{ display:flex; align-items:center; gap:10px; }
@@ -41,7 +40,7 @@
   .headerline{ display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:14px; }
   .title{ font-size:16px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:#374151; display:flex; align-items:center; gap:8px; }
   .pricepill{ padding:2px 10px; border-radius:999px; background:#eef2ff; color:#1f2937; font-size:12px; font-weight:800; cursor:text; }
-  #priceEdit:focus{ outline:none; }
+  #priceEdit, .editpill{ outline:none; }
 
   .grid{ display:grid; grid-template-columns:1fr; gap:18px; }
   .card{ border:1px solid var(--border); border-radius:16px; padding:16px; background:#fff; }
@@ -58,7 +57,23 @@
   /* Pins/acre key styling */
   .key{ margin-top:4px; padding:10px 12px; border-radius:12px; background:rgba(255,255,255,.45); border:1px solid rgba(0,0,0,.06); font-size:12px; line-height:1.35; color:#111827; }
 
-  @media (max-width:1024px){ .wrap{ grid-template-columns:1fr; } }
+  /* Assumptions panel */
+  details.assump{ background:rgba(255,255,255,.55); border:2px solid rgba(0,0,0,.08); border-radius:14px; padding:10px 12px; }
+  details.assump > summary{ cursor:pointer; font-weight:800; font-size:13px; letter-spacing:.04em; text-transform:uppercase; list-style:none; }
+  details.assump > summary::-webkit-details-marker{ display:none; }
+  .assump-grid{ display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:10px 14px; margin-top:10px; }
+  .assump-sec{ background:#fff; border:1px solid rgba(0,0,0,.06); border-radius:10px; padding:10px; }
+  .assump-sec h4{ margin:0 0 8px; font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:#6b7280; }
+  .row{ display:flex; align-items:center; justify-content:space-between; gap:10px; font-size:13px; }
+  .k{ color:#374151; }
+  .v{ font-weight:800; }
+  .editpill{ display:inline-block; min-width:40px; padding:2px 8px; border-radius:999px; border:1px solid rgba(0,0,0,.12); background:#f9fafb; }
+  .tiny{ font-size:12px; opacity:.8; }
+
+  @media (max-width:1024px){
+    .wrap{ grid-template-columns:1fr; }
+    .assump-grid{ grid-template-columns:1fr; }
+  }
 </style>
 </head>
 <body>
@@ -116,6 +131,85 @@
           <div>High: 5+ pins/acre</div>
         </div>
       </div>
+
+      <!-- Assumptions (editable pills) -->
+      <div class="group">
+        <details class="assump">
+          <summary>Assumptions (click values to edit)</summary>
+          <div class="assump-grid">
+            <div class="assump-sec">
+              <h4>Economics</h4>
+              <div class="row"><span class="k">Almond price</span><span class="v">$<span class="editpill" data-var="pricePerLb" data-type="number" data-dec="2" data-min="0.01">2.50</span>/lb</span></div>
+              <div class="row"><span class="k">Yield</span><span class="v"><span class="editpill" data-var="yieldLbPerAcre" data-type="number" data-dec="0" data-min="1">2500</span> lb/ac</span></div>
+              <div class="row"><span class="k">Loss rate Low</span><span class="v"><span class="editpill" data-var="lossRates.1" data-type="percent" data-dec="1" data-min="0" data-max="1">2.0%</span></span></div>
+              <div class="row"><span class="k">Loss rate Med</span><span class="v"><span class="editpill" data-var="lossRates.2" data-type="percent" data-dec="1" data-min="0" data-max="1">4.0%</span></span></div>
+              <div class="row"><span class="k">Loss rate High</span><span class="v"><span class="editpill" data-var="lossRates.3" data-type="percent" data-dec="1" data-min="0" data-max="1">6.0%</span></span></div>
+            </div>
+
+            <div class="assump-sec">
+              <h4>Baselines ($/ac)</h4>
+              <div class="row"><span class="k">Drip/Irrigation</span><span class="v">$<span class="editpill" data-var="baselines.drip" data-type="number" data-dec="0" data-min="0">80</span></span></div>
+              <div class="row"><span class="k">Crop damage</span><span class="v">$<span class="editpill" data-var="baselines.crop" data-type="number" data-dec="0" data-min="0">60</span></span></div>
+              <div class="row"><span class="k">Misc</span><span class="v">$<span class="editpill" data-var="baselines.misc" data-type="number" data-dec="0" data-min="0">30</span></span></div>
+              <div class="row tiny">Applied per acre, scaled by severity & species.</div>
+            </div>
+
+            <div class="assump-sec">
+              <h4>Severity Multipliers</h4>
+              <div class="row"><span class="k">Low</span><span class="v"><span class="editpill" data-var="severity.1" data-type="number" data-dec="2" data-min="0">0.80</span>x</span></div>
+              <div class="row"><span class="k">Medium</span><span class="v"><span class="editpill" data-var="severity.2" data-type="number" data-dec="2" data-min="0">1.00</span>x</span></div>
+              <div class="row"><span class="k">High</span><span class="v"><span class="editpill" data-var="severity.3" data-type="number" data-dec="2" data-min="0">1.20</span>x</span></div>
+            </div>
+
+            <div class="assump-sec">
+              <h4>Owl Effect</h4>
+              <div class="row"><span class="k">Owls / 100 ac</span><span class="v"><span class="editpill" data-var="owls.per100" data-type="number" data-dec="2" data-min="0">1.90</span></span></div>
+              <div class="row"><span class="k">Predation / owl / week</span><span class="v"><span class="editpill" data-var="owls.predPerWeek" data-type="number" data-dec="2" data-min="0">4.00</span></span></div>
+              <div class="row"><span class="k">Yield sensitivity</span><span class="v"><span class="editpill" data-var="owls.betaY" data-type="number" data-dec="2" data-min="0" data-max="1">0.55</span></span></div>
+              <div class="row"><span class="k">Non-yield sensitivity</span><span class="v"><span class="editpill" data-var="owls.betaN" data-type="number" data-dec="2" data-min="0" data-max="1">1.00</span></span></div>
+              <div class="row"><span class="k">Min reduction factor</span><span class="v"><span class="editpill" data-var="owls.minFactor" data-type="number" data-dec="2" data-min="0" data-max="1">0.60</span></span></div>
+            </div>
+
+            <div class="assump-sec">
+              <h4>Drop-off Weights</h4>
+              <div class="row"><span class="k">W1 (1st species)</span><span class="v"><span class="editpill" data-var="dropWeights.0" data-type="number" data-dec="2" data-min="0">1.00</span></span></div>
+              <div class="row"><span class="k">W2 (2nd)</span><span class="v"><span class="editpill" data-var="dropWeights.1" data-type="number" data-dec="2" data-min="0">0.70</span></span></div>
+              <div class="row"><span class="k">W3 (3rd)</span><span class="v"><span class="editpill" data-var="dropWeights.2" data-type="number" data-dec="2" data-min="0">0.40</span></span></div>
+            </div>
+
+            <div class="assump-sec">
+              <h4>Gophers – Multipliers</h4>
+              <div class="row"><span class="k">Yield</span><span class="v"><span class="editpill" data-var="species.gopher.mult.yield" data-type="number" data-dec="2" data-min="0">1.00</span>x</span></div>
+              <div class="row"><span class="k">Drip</span><span class="v"><span class="editpill" data-var="species.gopher.mult.drip" data-type="number" data-dec="2" data-min="0">1.30</span>x</span></div>
+              <div class="row"><span class="k">Crop</span><span class="v"><span class="editpill" data-var="species.gopher.mult.crop" data-type="number" data-dec="2" data-min="0">1.10</span>x</span></div>
+              <div class="row"><span class="k">Misc</span><span class="v"><span class="editpill" data-var="species.gopher.mult.misc" data-type="number" data-dec="2" data-min="0">1.00</span>x</span></div>
+              <div class="row"><span class="k tiny">K/ac</span><span class="v"><span class="editpill" data-var="species.gopher.K" data-type="number" data-dec="0" data-min="1">80</span></span></div>
+              <div class="row"><span class="k tiny">Base/10ac L-M-H</span><span class="v"><span class="editpill" data-var="species.gopher.basePer10.1" data-type="number" data-dec="0" data-min="0">20</span> / <span class="editpill" data-var="species.gopher.basePer10.2" data-type="number" data-dec="0" data-min="0">40</span> / <span class="editpill" data-var="species.gopher.basePer10.3" data-type="number" data-dec="0" data-min="0">70</span></span></div>
+            </div>
+
+            <div class="assump-sec">
+              <h4>Squirrels – Multipliers</h4>
+              <div class="row"><span class="k">Yield</span><span class="v"><span class="editpill" data-var="species.squirrel.mult.yield" data-type="number" data-dec="2" data-min="0">1.10</span>x</span></div>
+              <div class="row"><span class="k">Drip</span><span class="v"><span class="editpill" data-var="species.squirrel.mult.drip" data-type="number" data-dec="2" data-min="0">0.70</span>x</span></div>
+              <div class="row"><span class="k">Crop</span><span class="v"><span class="editpill" data-var="species.squirrel.mult.crop" data-type="number" data-dec="2" data-min="0">1.20</span>x</span></div>
+              <div class="row"><span class="k">Misc</span><span class="v"><span class="editpill" data-var="species.squirrel.mult.misc" data-type="number" data-dec="2" data-min="0">1.00</span>x</span></div>
+              <div class="row"><span class="k tiny">K/ac</span><span class="v"><span class="editpill" data-var="species.squirrel.K" data-type="number" data-dec="0" data-min="1">60</span></span></div>
+              <div class="row"><span class="k tiny">Base/10ac L-M-H</span><span class="v"><span class="editpill" data-var="species.squirrel.basePer10.1" data-type="number" data-dec="0" data-min="0">12</span> / <span class="editpill" data-var="species.squirrel.basePer10.2" data-type="number" data-dec="0" data-min="0">24</span> / <span class="editpill" data-var="species.squirrel.basePer10.3" data-type="number" data-dec="0" data-min="0">40</span></span></div>
+            </div>
+
+            <div class="assump-sec">
+              <h4>Rats – Multipliers</h4>
+              <div class="row"><span class="k">Yield</span><span class="v"><span class="editpill" data-var="species.rat.mult.yield" data-type="number" data-dec="2" data-min="0">0.80</span>x</span></div>
+              <div class="row"><span class="k">Drip</span><span class="v"><span class="editpill" data-var="species.rat.mult.drip" data-type="number" data-dec="2" data-min="0">0.90</span>x</span></div>
+              <div class="row"><span class="k">Crop</span><span class="v"><span class="editpill" data-var="species.rat.mult.crop" data-type="number" data-dec="2" data-min="0">0.90</span>x</span></div>
+              <div class="row"><span class="k">Misc</span><span class="v"><span class="editpill" data-var="species.rat.mult.misc" data-type="number" data-dec="2" data-min="0">1.30</span>x</span></div>
+              <div class="row"><span class="k tiny">K/ac</span><span class="v"><span class="editpill" data-var="species.rat.K" data-type="number" data-dec="0" data-min="1">70</span></span></div>
+              <div class="row"><span class="k tiny">Base/10ac L-M-H</span><span class="v"><span class="editpill" data-var="species.rat.basePer10.1" data-type="number" data-dec="0" data-min="0">15</span> / <span class="editpill" data-var="species.rat.basePer10.2" data-type="number" data-dec="0" data-min="0">30</span> / <span class="editpill" data-var="species.rat.basePer10.3" data-type="number" data-dec="0" data-min="0">50</span></span></div>
+            </div>
+
+          </div>
+        </details>
+      </div>
     </section>
 
     <!-- RIGHT / RESULTS -->
@@ -138,143 +232,102 @@
   </div>
 
 <script>
-/* ------------------------------ Helpers ------------------------------ */
+/* ========= Utilities ========= */
 const $=s=>document.querySelector(s), $$=s=>Array.from(document.querySelectorAll(s));
 const clamp=(x,lo,hi)=>Math.max(lo,Math.min(hi,x));
 function money(n){ return "$"+Math.round(n).toLocaleString("en-US"); }
 
-/* ------------------------------ Model (1-Year, deterministic) ------------------------------ */
-/* Shared life-history */
-const litterMean = 6.0;
-const birthFracFemale = 0.70;
-const breederFrac = 0.80;
-const fertSlope = 3.5;
-const survJ = 0.45, survS = 0.65, survA = 0.82;
-const agingA = 0.08;
-
-/* Owls (population-linked damage reduction) */
-const OWLS_PER_100_ACRES = 1.9;
-const PREDATION_PER_OWL_PER_WEEK = 4.0;
-const BETA_YIELD = 0.55;
-const BETA_NON   = 1.00;
-const OWL_MIN_FACTOR = 0.60;
-
-/* Economics (price is editable via pill) */
-let pricePerLb = 2.50;
-const yieldLbPerAcre = 2500.0;
-const lossMild = 0.02, lossMedium = 0.04, lossSevere = 0.06;
-
-/* Rebalanced per-acre baselines (before severity & species multipliers) */
-const dripPerAcre_base = 80.0;
-const cropDmgPerAcre_base = 60.0;
-const miscPerAcre_base   = 30.0;
-
-const sevMultMild = 0.8, sevMultMed = 1.0, sevMultSev = 1.2;
-
-/* Species parameters */
-const speciesParams = {
-  gopher:   {
-    K_per_acre: 80,
-    basePer10: {1:20, 2:40, 3:70},
-    mult: { yield: 1.00, drip: 1.30, crop: 1.10, misc: 1.00 }
-  },
-  squirrel: {
-    K_per_acre: 60,
-    basePer10: {1:12, 2:24, 3:40},
-    mult: { yield: 1.10, drip: 0.70, crop: 1.20, misc: 1.00 }
-  },
-  rat:      {
-    K_per_acre: 70,
-    basePer10: {1:15, 2:30, 3:50},
-    mult: { yield: 0.80, drip: 0.90, crop: 0.90, misc: 1.30 }
+/* ========= Config (all editable via UI) ========= */
+const cfg = {
+  pricePerLb: 2.50,
+  yieldLbPerAcre: 2500,
+  lossRates: {1:0.02, 2:0.04, 3:0.06},
+  baselines: {drip:80, crop:60, misc:30},
+  severity: {1:0.80, 2:1.00, 3:1.20},
+  owls: { per100:1.90, predPerWeek:4.00, betaY:0.55, betaN:1.00, minFactor:0.60 },
+  dropWeights: [1.00, 0.70, 0.40],
+  species: {
+    gopher:   { K:80, basePer10:{1:20,2:40,3:70}, mult:{yield:1.00, drip:1.30, crop:1.10, misc:1.00} },
+    squirrel: { K:60, basePer10:{1:12,2:24,3:40}, mult:{yield:1.10, drip:0.70, crop:1.20, misc:1.00} },
+    rat:      { K:70, basePer10:{1:15,2:30,3:50}, mult:{yield:0.80, drip:0.90, crop:0.90, misc:1.30} }
   }
 };
 
-/* Linear drop-off config (1st, 2nd, 3rd species weights) */
-const DROP_STEP = 0.5;   // linear decrement per additional species
-const MIN_WEIGHT = 0.3;  // floor so the 3rd species still contributes meaningfully
+/* ========= Population step (per species) ========= */
+const litterMean = 6.0, birthFracFemale=0.70, breederFrac=0.80, fertSlope=3.5;
+const survJ=0.45, survS=0.65, survA=0.82, agingA=0.08;
 
-/* One-species annual step (for owl population effect only) */
 function stepSpeciesOnce(P, acres, owlsOn, K_per_acre){
   let [Jf,Jm,Sf,Sm,Af,Am] = [P[0][0],P[0][1],P[1][0],P[1][1],P[2][0],P[2][1]];
   const K_total = K_per_acre * acres;
   const total   = Jf+Jm+Sf+Sm+Af+Am;
-  const density = K_total>0 ? total / K_total : 0.0;
+  const density = K_total>0 ? total / K_total : 0;
 
-  const fertMult = 1.0 / (1.0 + Math.exp(fertSlope * (density - 1.0)));
+  const fertMult = 1 / (1 + Math.exp(fertSlope * (density - 1)));
   const breeders = Af * breederFrac;
   const births   = breeders * litterMean * fertMult;
   const pupsF    = births * birthFracFemale;
-  const pupsM    = births * (1.0 - birthFracFemale);
+  const pupsM    = births * (1 - birthFracFemale);
 
-  let nextJf = pupsF;
-  let nextJm = pupsM;
-  let nextSf = Jf * survJ;
-  let nextSm = Jm * survJ;
-  let nextAf = Sf * survS + Af * survA;
-  let nextAm = Sm * survS + Am * survA;
+  let nextJf = pupsF, nextJm = pupsM;
+  let nextSf = Jf * survJ, nextSm = Jm * survJ;
+  let nextAf = Sf * survS + Af * survA, nextAm = Sm * survS + Am * survA;
 
   nextAf = Math.max(0, nextAf - Af * agingA);
   nextAm = Math.max(0, nextAm - Am * agingA);
 
   if (owlsOn){
-    const owlsEff = OWLS_PER_100_ACRES * (acres/100.0);
+    const owlsEff = cfg.owls.per100 * (acres/100);
     const afterTot = nextJf + nextJm + nextSf + nextSm + nextAf + nextAm;
-    const densityAfter = K_total>0 ? Math.min(1.0, afterTot / K_total) : 0.0;
-    const owlRemoval = owlsEff * PREDATION_PER_OWL_PER_WEEK * 52.0 * Math.max(0, Math.min(1, densityAfter));
+    const densityAfter = K_total>0 ? Math.min(1, afterTot / K_total) : 0;
+    const owlRemoval = owlsEff * cfg.owls.predPerWeek * 52 * Math.max(0, Math.min(1, densityAfter));
     if(afterTot > 0 && owlRemoval > 0){
       const frac = Math.min(1, owlRemoval / afterTot);
       const k = 1 - frac;
       nextJf*=k; nextJm*=k; nextSf*=k; nextSm*=k; nextAf*=k; nextAm*=k;
     }
   }
-
   return [[nextJf,nextJm],[nextSf,nextSm],[nextAf,nextAm]];
 }
-
 const sumAll=P=>P[0][0]+P[0][1]+P[1][0]+P[1][1]+P[2][0]+P[2][1];
 
-/* Population after one year (for owl discount rN) */
+/* ========= Damage calcs ========= */
+function speciesStandaloneDamage(acres, level, key){
+  const sevMult = cfg.severity[level];
+  const baseRevenue = acres * cfg.yieldLbPerAcre * cfg.pricePerLb;
+  const lossRate = cfg.lossRates[level];
+  const m = cfg.species[key].mult;
+
+  const lossOfCrop = baseRevenue * lossRate * m.yield;
+  const drip  = cfg.baselines.drip * sevMult * acres * m.drip;
+  const cropD = cfg.baselines.crop * sevMult * acres * m.crop;
+  const misc  = cfg.baselines.misc * sevMult * acres * m.misc;
+  const total = lossOfCrop + drip + cropD + misc;
+  return {lossOfCrop, drip, cropD, misc, total};
+}
+
 function combinedPopAfterOneYear(acres, level, active, owlsOn){
   let total = 0;
   for (const key of active){
-    const sp = speciesParams[key];
+    const sp = cfg.species[key];
     const totalInit = sp.basePer10[level] * (acres/10);
     const Af0 = totalInit * birthFracFemale, Am0 = totalInit * (1 - birthFracFemale);
     const P0 = [[0,0],[0,0],[Af0,Am0]];
-    const P1 = stepSpeciesOnce(P0, acres, owlsOn, sp.K_per_acre);
+    const P1 = stepSpeciesOnce(P0, acres, owlsOn, sp.K);
     total += sumAll(P1);
   }
   return total;
 }
 
-/* Standalone damage for a single species (no owls) */
-function speciesStandaloneDamage(acres, level, key){
-  const sevMult = (level===1?sevMultMild:(level===2?sevMultMed:sevMultSev));
-  const baseRevenue = acres * yieldLbPerAcre * pricePerLb;
-  const lossRate = (level===1?lossMild:(level===2?lossMedium:lossSevere));
-  const m = speciesParams[key].mult;
-
-  const lossOfCrop = baseRevenue * lossRate * m.yield;
-  const drip  = dripPerAcre_base    * sevMult * acres * m.drip;
-  const cropD = cropDmgPerAcre_base * sevMult * acres * m.crop;
-  const misc  = miscPerAcre_base    * sevMult * acres * m.misc;
-  const total = lossOfCrop + drip + cropD + misc;
-  return {lossOfCrop, drip, cropD, misc, total};
-}
-
-/* Linear drop-off weighted sum across species */
+/* Linear drop-off weighted sum */
 function weightedSumDamages(acres, level, activeSet){
   const list = Array.from(activeSet).map(k => ({ key:k, dmg: speciesStandaloneDamage(acres, level, k) }));
   if (list.length === 0) return {lossOfCrop:0, drip:0, cropD:0, misc:0, total:0};
 
-  // Sort by standalone total descending so biggest driver gets weight 1.0
   list.sort((a,b)=> b.dmg.total - a.dmg.total);
+  const weights = cfg.dropWeights.slice(0, list.length);
+  while (weights.length < list.length) weights.push(weights[weights.length-1] ?? 0.4);
 
-  // Build weights linearly: 1.0, 1.0-DROP_STEP, 1.0-2*DROP_STEP, ... with a floor
-  const weights = list.map((_,i)=> Math.max(MIN_WEIGHT, 1 - i*DROP_STEP));
-
-  // Weighted sum
   let lossOfCrop=0, drip=0, cropD=0, misc=0;
   list.forEach((item,i)=>{
     const w = weights[i], d = item.dmg;
@@ -287,38 +340,26 @@ function weightedSumDamages(acres, level, activeSet){
   return {lossOfCrop, drip, cropD, misc, total};
 }
 
-/* Final 1-year damages (with owl discounts applied to the weighted sum) */
 function computeOneYear(acres, level, owlsOn, activeSet){
-  if (activeSet.size === 0){
-    return { lossOfCrop:0, drip:0, cropD:0, misc:0, total:0 };
-  }
+  if (activeSet.size === 0) return { lossOfCrop:0, drip:0, cropD:0, misc:0, total:0 };
 
-  // Base weighted damages with linear drop-off
   let D = weightedSumDamages(acres, level, activeSet);
 
-  // Owl discounts
   if (owlsOn){
     const eps=1e-9;
     const totOff = combinedPopAfterOneYear(acres, level, Array.from(activeSet), false);
     const totOn  = combinedPopAfterOneYear(acres, level, Array.from(activeSet), true);
     const rN = Math.max(0, (totOff - totOn) / Math.max(eps, totOff));
-
-    const fY = clamp(1 - BETA_YIELD * rN, OWL_MIN_FACTOR, 1.0);
-    const fN = clamp(1 - BETA_NON  * rN, OWL_MIN_FACTOR, 1.0);
-
+    const fY = clamp(1 - cfg.owls.betaY * rN, cfg.owls.minFactor, 1);
+    const fN = clamp(1 - cfg.owls.betaN * rN, cfg.owls.minFactor, 1);
     D.lossOfCrop *= fY;
     D.drip *= fN; D.cropD *= fN; D.misc *= fN;
     D.total = D.lossOfCrop + D.drip + D.cropD + D.misc;
   }
-
-  // Clamp non-negatives
-  D.lossOfCrop=Math.max(0,D.lossOfCrop);
-  D.drip=Math.max(0,D.drip); D.cropD=Math.max(0,D.cropD); D.misc=Math.max(0,D.misc);
-  D.total = D.lossOfCrop + D.drip + D.cropD + D.misc;
   return D;
 }
 
-/* ------------------------------ Render & inputs ------------------------------ */
+/* ========= UI state & rendering ========= */
 let lastValidAcres = 40;
 const activeRodents = new Set(["gopher"]); // default ON
 
@@ -327,53 +368,6 @@ function activeLevel(){
   return parseInt(btn.dataset.level,10);
 }
 
-/* Acres input handling (lax while typing, strict on blur) */
-function readAcresLax(){
-  const input = $("#acres");
-  const v = parseInt(input.value, 10);
-  if (!Number.isFinite(v) || v < 1) return null;
-  lastValidAcres = v; return v;
-}
-function readAcresStrict(){
-  const input = $("#acres");
-  let v = parseInt(input.value, 10);
-  if (!Number.isFinite(v) || v < 1) v = lastValidAcres || 1;
-  input.value = v; lastValidAcres = v; return v;
-}
-
-/* Price pill editor */
-function installPriceEditor(){
-  const pill = $("#almondPrice");
-  pill.innerHTML = `$<span id="priceEdit" contenteditable="true" spellcheck="false" aria-label="Almond price per pound">${pricePerLb.toFixed(2)}</span>/lb`;
-  const ed = $("#priceEdit");
-
-  ed.addEventListener("focus", ()=>{
-    const range = document.createRange(); range.selectNodeContents(ed);
-    const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
-  });
-  ed.addEventListener("keydown", (e)=>{ if (e.key === "Enter"){ e.preventDefault(); ed.blur(); }});
-  ed.addEventListener("blur", ()=>{
-    const raw = ed.textContent || "";
-    const num = parseFloat(raw.replace(/[^0-9.]/g,""));
-    if (Number.isFinite(num) && num > 0){ pricePerLb = num; }
-    ed.textContent = pricePerLb.toFixed(2);
-    render(lastValidAcres);
-  });
-}
-
-/* Rodent toggle handling (multi-select pills) */
-function installRodentToggles(){
-  $$(".rodentbtn").forEach(btn=>{
-    btn.addEventListener("click", ()=>{
-      const k = btn.dataset.kind;
-      const isActive = btn.classList.toggle("active");
-      if (isActive) activeRodents.add(k); else activeRodents.delete(k);
-      render(lastValidAcres);
-    });
-  });
-}
-
-/* Render */
 function render(acres){
   const level = activeLevel();
   const owlsOn = $("#owls").checked;
@@ -381,37 +375,137 @@ function render(acres){
 
   $("#nat_total").textContent = money(d.total);
   $("#nat_break").innerHTML = `
-    <tr><td>Loss of crop</td><td>${money(d.lossOfCrop)}</td></tr>
+    <tr><td>Crop damage</td><td>${money(d.lossOfCrop)}</td></tr>
     <tr><td>Drip/irrigation</td><td>${money(d.drip)}</td></tr>
-    <tr><td>Crop damage</td><td>${money(d.cropD)}</td></tr>
+    <tr><td>Loss of crop</td><td>${money(d.cropD)}</td></tr>
     <tr><td>Misc</td><td>${money(d.misc)}</td></tr>
     <tr><td>Total</td><td>${money(d.total)}</td></tr>
   `;
 }
 
-/* Events */
+/* ========= Inputs ========= */
+function readAcresLax(){
+  const input = $("#acres"); const v = parseInt(input.value, 10);
+  if (!Number.isFinite(v) || v < 1) return null;
+  lastValidAcres = v; return v;
+}
+function readAcresStrict(){
+  const input = $("#acres"); let v = parseInt(input.value, 10);
+  if (!Number.isFinite(v) || v < 1) v = lastValidAcres || 1;
+  input.value = v; lastValidAcres = v; return v;
+}
+
 $$(".infbtn").forEach(btn=>{
   btn.addEventListener("click", ()=>{
     $$(".infbtn").forEach(b=>{ const on=(b===btn); b.classList.toggle("active",on); b.setAttribute("aria-selected", on?"true":"false"); });
     render(lastValidAcres);
   });
 });
-
-$("#acres").addEventListener("input", ()=>{
-  const v = readAcresLax();
-  if (v !== null) render(v);
-});
-$("#acres").addEventListener("blur", ()=>{
-  const v = readAcresStrict();
-  render(v);
-});
-
+$("#acres").addEventListener("input", ()=>{ const v=readAcresLax(); if(v!==null) render(v); });
+$("#acres").addEventListener("blur", ()=>{ render(readAcresStrict()); });
 $("#owls").addEventListener("change", ()=>render(lastValidAcres));
 
+/* Rodent toggles */
+$$(".rodentbtn").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    const k = btn.dataset.kind;
+    const isActive = btn.classList.toggle("active");
+    if (isActive) activeRodents.add(k); else activeRodents.delete(k);
+    render(lastValidAcres);
+  });
+});
+
+/* ========= Editable pills binding ========= */
+function getByPath(obj, path){
+  const parts = path.split(".");
+  let t = obj; for (let i=0;i<parts.length;i++){ if(t==null) return undefined; t = t[parts[i]]; }
+  return t;
+}
+function setByPath(obj, path, val){
+  const parts = path.split(".");
+  let t = obj; for (let i=0;i<parts.length-1;i++){ t = t[parts[i]]; }
+  t[parts[parts.length-1]] = val;
+}
+function formatForDisplay(val, type, dec){
+  if (type==="percent") return (val*100).toFixed(dec)+"%";
+  return Number(val).toFixed(dec);
+}
+function parseFromText(txt, type){
+  const raw = String(txt||"").trim();
+  if (type==="percent"){
+    const num = parseFloat(raw.replace("%",""));
+    if (!Number.isFinite(num)) return null;
+    return num/100;
+  } else {
+    const num = parseFloat(raw.replace(/[^0-9.\-]/g,""));
+    return Number.isFinite(num) ? num : null;
+  }
+}
+function clampOpt(v, minAttr, maxAttr){
+  let v2 = v;
+  if (minAttr!==undefined && minAttr!==null && minAttr!=="") v2 = Math.max(parseFloat(minAttr), v2);
+  if (maxAttr!==undefined && maxAttr!==null && maxAttr!=="") v2 = Math.min(parseFloat(maxAttr), v2);
+  return v2;
+}
+function writePill(el){
+  const path = el.dataset.var, type = el.dataset.type||"number", dec=parseInt(el.dataset.dec||"2",10);
+  const val = getByPath(cfg, path);
+  el.textContent = formatForDisplay(val, type, dec);
+}
+function bindEditablePills(){
+  // Initialize text from cfg
+  $$(".editpill").forEach(writePill);
+
+  // Editing behaviour
+  $$(".editpill").forEach(el=>{
+    el.contentEditable = "true";
+    el.addEventListener("focus", ()=>{
+      const r=document.createRange(); r.selectNodeContents(el);
+      const s=window.getSelection(); s.removeAllRanges(); s.addRange(r);
+    });
+    el.addEventListener("keydown", (e)=>{ if(e.key==="Enter"){ e.preventDefault(); el.blur(); }});
+    el.addEventListener("blur", ()=>{
+      const type = el.dataset.type||"number";
+      const dec  = parseInt(el.dataset.dec||"2",10);
+      const path = el.dataset.var;
+      let v = parseFromText(el.textContent, type);
+      if (v===null){ writePill(el); return; }
+      v = clampOpt(v, el.dataset.min, el.dataset.max);
+      setByPath(cfg, path, v);
+      // Keep header price pill in sync if price changed
+      if (path==="pricePerLb") syncPricePill();
+      writePill(el);
+      render(lastValidAcres);
+    });
+  });
+}
+
+/* Header price pill */
+function syncPricePill(){
+  const pill = $("#almondPrice");
+  pill.innerHTML = `$<span id="priceEdit" contenteditable="true" spellcheck="false" aria-label="Almond price per pound">${cfg.pricePerLb.toFixed(2)}</span>/lb`;
+  const ed = $("#priceEdit");
+  ed.addEventListener("focus", ()=>{
+    const range = document.createRange(); range.selectNodeContents(ed);
+    const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
+  });
+  ed.addEventListener("keydown", (e)=>{ if (e.key === "Enter"){ e.preventDefault(); ed.blur(); }});
+  ed.addEventListener("blur", ()=>{
+    const num = parseFloat((ed.textContent||"").replace(/[^0-9.]/g,""));
+    if (Number.isFinite(num) && num>0){ cfg.pricePerLb = num; }
+    ed.textContent = cfg.pricePerLb.toFixed(2);
+    // also reflect into assumptions pill (if present)
+    const econPrice = document.querySelector('.editpill[data-var="pricePerLb"]');
+    if (econPrice) econPrice.textContent = cfg.pricePerLb.toFixed(2);
+    render(lastValidAcres);
+  });
+}
+
+/* ========= Boot ========= */
 window.addEventListener("load", ()=>{
   lastValidAcres = parseInt($("#acres").value,10) || 40;
-  installPriceEditor();
-  installRodentToggles();
+  bindEditablePills();
+  syncPricePill();
   render(lastValidAcres);
 });
 </script>
